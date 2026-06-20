@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Suivi du jour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050505;
+  --text:#ffffff;
+  --muted:rgba(255,255,255,.55);
+  --faint:rgba(255,255,255,.32);
+  --card:rgba(255,255,255,.04);
+  --card-hover:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.10);
+  --border-strong:rgba(255,255,255,.18);
+  --glow:rgba(255,255,255,.10);
+  --shadow:0 24px 60px rgba(0,0,0,.55);
+  --radius:20px;
+  --ease:cubic-bezier(0.25,0.8,0.25,1);
+  --halo-1:rgba(255,255,255,.06);
+  --halo-2:rgba(255,255,255,.035);
+  --accent:#ffffff;
+  --track:rgba(255,255,255,.08);
+  --rgb:255,255,255;
+}
+[data-theme="light"]{
+  --bg:#f3f3f4;--text:#0a0a0b;--muted:rgba(10,10,11,.58);--faint:rgba(10,10,11,.34);
+  --card:rgba(255,255,255,.7);--card-hover:rgba(255,255,255,.92);--border:rgba(10,10,11,.10);
+  --border-strong:rgba(10,10,11,.18);--glow:rgba(10,10,11,.08);--shadow:0 24px 60px rgba(0,0,0,.14);
+  --halo-1:rgba(10,10,11,.05);--halo-2:rgba(10,10,11,.03);--accent:#0a0a0b;--track:rgba(10,10,11,.08);--rgb:10,10,11;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  overflow-x:hidden;transition:background .5s var(--ease),color .5s var(--ease);line-height:1.5}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(620px 620px at 12% -5%,var(--halo-1),transparent 60%),
+    radial-gradient(520px 520px at 100% 8%,var(--halo-2),transparent 55%),
+    radial-gradient(700px 700px at 78% 105%,var(--halo-1),transparent 60%);transition:background .5s var(--ease)}
+.app{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 22px 130px}
+
+header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;gap:16px}
+.daystamp .d1{font-size:21px;font-weight:700;letter-spacing:-.02em;text-transform:capitalize}
+.daystamp .d2{font-size:11.5px;color:var(--faint);font-weight:500;letter-spacing:.16em;text-transform:uppercase;margin-top:1px}
+.gear{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;cursor:pointer;
+  background:var(--card);border:1px solid var(--border);backdrop-filter:blur(14px);color:var(--text);
+  transition:transform .45s var(--ease),background .3s var(--ease),box-shadow .45s var(--ease),border-color .3s var(--ease)}
+.gear svg{width:23px;height:23px;transition:transform .6s var(--ease)}
+.gear:hover{transform:translateY(-3px);background:var(--card-hover);box-shadow:0 12px 30px rgba(0,0,0,.4),0 0 18px var(--glow);border-color:var(--border-strong)}
+.gear:hover svg{transform:rotate(75deg)}
+
+.tabs{display:flex;gap:8px;padding:6px;border-radius:var(--radius);background:var(--card);
+  border:1px solid var(--border);backdrop-filter:blur(16px);margin-bottom:26px;box-shadow:var(--shadow)}
+.tab{flex:1;padding:13px 10px;border:none;background:transparent;color:var(--muted);font-family:inherit;
+  font-weight:600;font-size:14px;border-radius:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:color .3s var(--ease),background .35s var(--ease),transform .35s var(--ease)}
+.tab svg{width:18px;height:18px}
+.tab.active{background:var(--accent);color:var(--bg)}
+.tab:not(.active):hover{color:var(--text);transform:translateY(-1px)}
+
+.view{display:none;animation:fade .45s var(--ease)}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  backdrop-filter:blur(16px);box-shadow:var(--shadow);padding:20px;
+  transition:transform .45s var(--ease),background .35s var(--ease),box-shadow .45s var(--ease),border-color .35s var(--ease)}
+.card.hoverable:hover{transform:translateY(-5px);background:var(--card-hover);
+  box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 26px var(--glow);border-color:var(--border-strong)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-head h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.section-head .count{font-size:12px;color:var(--faint);font-weight:600}
+
+.add-row{display:flex;gap:10px;margin-bottom:18px}
+.input{flex:1;padding:14px 16px;border-radius:15px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);font-family:inherit;font-size:14.5px;font-weight:500;
+  backdrop-filter:blur(14px);transition:border-color .3s var(--ease),box-shadow .3s var(--ease)}
+.input::placeholder{color:var(--faint)}
+.input:focus{outline:none;border-color:var(--border-strong);box-shadow:0 0 0 3px var(--glow)}
+.btn{padding:14px 18px;border-radius:15px;border:1px solid var(--border-strong);background:var(--accent);color:var(--bg);
+  font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:7px;
+  transition:transform .4s var(--ease),box-shadow .4s var(--ease);white-space:nowrap}
+.btn svg{width:17px;height:17px}
+.btn:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.4),0 0 20px var(--glow)}
+.btn.ghost{background:var(--card);color:var(--text);border-color:var(--border)}
+.btn:active{transform:translateY(-1px)}
+
+.list{display:flex;flex-direction:column;gap:11px}
+.h-item{display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:16px;
+  background:var(--card);border:1px solid var(--border);backdrop-filter:blur(12px);
+  transition:transform .45s var(--ease),background .35s var(--ease),box-shadow .45s var(--ease),border-color .35s var(--ease)}
+.h-item:hover{transform:translateY(-3px);background:var(--card-hover);box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 18px var(--glow);border-color:var(--border-strong)}
+.h-main{flex:1;min-width:0}
+.h-name{font-weight:600;font-size:15px;transition:opacity .3s var(--ease)}
+.h-meta{font-size:11.5px;color:var(--faint);font-weight:500;margin-top:3px;display:flex;gap:10px;align-items:center}
+.streak{display:inline-flex;align-items:center;gap:4px}
+.streak svg{width:12px;height:12px}
+
+/* two-state habit boxes */
+.hbox{display:flex;gap:8px;flex-shrink:0}
+.tickbtn{width:34px;height:34px;border-radius:11px;border:1.6px solid var(--border-strong);
+  display:grid;place-items:center;cursor:pointer;background:transparent;color:var(--faint);
+  transition:transform .4s var(--ease),background .35s var(--ease),border-color .35s var(--ease),color .35s var(--ease)}
+.tickbtn svg{width:17px;height:17px}
+.tickbtn:hover{transform:scale(1.12)}
+.tickbtn.yes.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.tickbtn.no.on{background:transparent;border-color:var(--text);color:var(--text)}
+.h-item.done-yes .h-name{opacity:.5}
+.h-item.done-no .h-name{opacity:.5;text-decoration:line-through}
+
+.check{width:30px;height:30px;border-radius:10px;border:1.6px solid var(--border-strong);
+  display:grid;place-items:center;cursor:pointer;flex-shrink:0;background:transparent;color:transparent;
+  transition:transform .4s var(--ease),background .35s var(--ease),border-color .35s var(--ease)}
+.check svg{width:17px;height:17px}
+.check.done{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.h-item.completed .h-name{opacity:.45;text-decoration:line-through}
+
+.t-tags{display:flex;gap:7px;margin-top:5px;flex-wrap:wrap}
+.tag{font-size:10.5px;font-weight:600;letter-spacing:.04em;padding:3px 9px;border-radius:20px;
+  background:var(--track);color:var(--muted);border:1px solid var(--border);display:inline-flex;align-items:center;gap:4px}
+.tag svg{width:11px;height:11px}
+.play-btn{width:36px;height:36px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--text);
+  cursor:pointer;display:grid;place-items:center;flex-shrink:0;
+  transition:color .3s var(--ease),transform .4s var(--ease),box-shadow .4s var(--ease),border-color .3s var(--ease)}
+.play-btn svg{width:18px;height:18px}
+.play-btn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 0 16px var(--glow);border-color:var(--border-strong);background:var(--accent);color:var(--bg)}
+.del{width:30px;height:30px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--faint);
+  cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:color .3s,background .3s,transform .35s var(--ease)}
+.del svg{width:16px;height:16px}
+.del:hover{color:var(--text);background:var(--card-hover);transform:scale(1.1)}
+
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.stat{padding:18px;text-align:left}
+.stat .v{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.stat .l{font-size:11px;color:var(--faint);font-weight:600;margin-top:7px;text-transform:uppercase;letter-spacing:.1em}
+.range{display:flex;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:5px;backdrop-filter:blur(12px)}
+.range button{flex:1;padding:9px;border:none;background:transparent;color:var(--muted);font-family:inherit;font-weight:600;font-size:12.5px;border-radius:9px;cursor:pointer;transition:color .3s,background .35s var(--ease)}
+.range button.active{background:var(--accent);color:var(--bg)}
+.chart{display:flex;align-items:flex-end;gap:8px;height:180px;padding:10px 4px 0}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end}
+.bar{width:100%;max-width:46px;border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,var(--accent),rgba(var(--rgb),.25));
+  min-height:4px;transition:height .6s var(--ease),transform .4s var(--ease),box-shadow .4s var(--ease)}
+.bar-wrap:hover .bar{transform:scaleY(1.02);box-shadow:0 0 22px var(--glow)}
+.bar-lbl{font-size:11px;color:var(--faint);font-weight:600}
+.bar-val{font-size:11px;color:var(--muted);font-weight:700}
+.heat{display:grid;gap:6px;margin-top:6px}
+.heat-cell{aspect-ratio:1;border-radius:6px;background:var(--track);transition:transform .35s var(--ease),background .3s}
+.heat-cell:hover{transform:scale(1.18)}
+
+/* Notes / planning */
+.note-row{display:flex;align-items:stretch;gap:12px;padding:11px 14px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);backdrop-filter:blur(12px);
+  transition:background .3s var(--ease),border-color .3s var(--ease),transform .4s var(--ease),box-shadow .4s var(--ease)}
+.note-row:hover{transform:translateY(-2px);background:var(--card-hover);border-color:var(--border-strong);box-shadow:0 14px 32px rgba(0,0,0,.4)}
+.note-row.filled{border-color:var(--border-strong)}
+.note-row.now{box-shadow:0 0 0 2px var(--glow),0 14px 32px rgba(0,0,0,.4);border-color:var(--text)}
+.note-time{flex-shrink:0;width:58px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;color:var(--muted)}
+.note-row.filled .note-time,.note-row.now .note-time{color:var(--text)}
+.note-dot{width:7px;height:7px;border-radius:50%;background:var(--track);flex-shrink:0;transition:background .3s}
+.note-row.filled .note-dot{background:var(--accent)}
+.note-row.now .note-dot{background:var(--text);box-shadow:0 0 8px var(--glow)}
+.note-input{flex:1;border:none;background:transparent;color:var(--text);font-family:inherit;font-size:14px;font-weight:500;resize:none;outline:none;padding:5px 0;line-height:1.45;overflow:hidden}
+.note-input::placeholder{color:var(--faint)}
+.note-jump{display:flex;gap:6px;margin-bottom:16px}
+.note-jump button{flex:1;padding:9px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:600;font-size:12px;border-radius:10px;cursor:pointer;transition:color .3s,background .35s var(--ease),transform .35s}
+.note-jump button:hover{color:var(--text);transform:translateY(-1px);background:var(--card-hover)}
+.recap-item{display:flex;gap:13px;padding:11px 0;border-bottom:1px solid var(--border)}
+.recap-item:last-child{border-bottom:none}
+.recap-t{font-weight:700;font-size:13px;color:var(--muted);width:54px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.recap-x{font-size:14px;font-weight:500}
+
+/* Settings */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+.overlay.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;z-index:51;top:50%;left:50%;transform:translate(-50%,-46%) scale(.96);
+  width:min(460px,92vw);max-height:86vh;overflow-y:auto;border:1px solid var(--border-strong);border-radius:24px;
+  backdrop-filter:blur(28px);box-shadow:var(--shadow);padding:26px;opacity:0;pointer-events:none;
+  transition:opacity .4s var(--ease),transform .45s var(--ease)}
+[data-theme="dark"] .sheet{background:rgba(18,18,20,.82)}
+[data-theme="light"] .sheet{background:rgba(255,255,255,.9)}
+.sheet.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.sheet h3{font-size:19px;font-weight:700;margin-bottom:4px}
+.sheet .desc{font-size:12.5px;color:var(--muted);margin-bottom:22px}
+.set-block{margin-bottom:22px}
+.set-block .bl{font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;margin-bottom:11px}
+.opt-row{display:flex;gap:9px}
+.opt{flex:1;padding:14px 10px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--muted);
+  cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  transition:color .3s,background .35s var(--ease),transform .35s var(--ease),border-color .3s,box-shadow .35s}
+.opt svg{width:21px;height:21px}
+.opt:hover{transform:translateY(-2px);box-shadow:0 0 16px var(--glow);border-color:var(--border-strong);color:var(--text)}
+.opt.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);margin-bottom:10px}
+.toggle-row .tl{font-size:14px;font-weight:600}
+.toggle-row .ts{font-size:11.5px;color:var(--faint);margin-top:2px}
+.switch{width:50px;height:28px;border-radius:20px;background:var(--track);border:1px solid var(--border);position:relative;cursor:pointer;flex-shrink:0;transition:background .35s var(--ease)}
+.switch::after{content:"";position:absolute;top:2.5px;left:3px;width:21px;height:21px;border-radius:50%;background:var(--text);transition:transform .4s var(--ease)}
+.switch.on{background:var(--accent)}
+.switch.on::after{transform:translateX(21px);background:var(--bg)}
+.close-x{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:11px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);cursor:pointer;display:grid;place-items:center;transition:transform .35s var(--ease),background .3s}
+.close-x:hover{transform:rotate(90deg) scale(1.05);background:var(--card-hover)}
+.close-x svg{width:18px;height:18px}
+.pomo-config{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cfg{padding:13px;border-radius:14px;background:var(--card);border:1px solid var(--border)}
+.cfg .clabel{font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;text-align:center}
+.stepper{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.stepper button{width:28px;height:28px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);
+  font-size:17px;cursor:pointer;display:grid;place-items:center;transition:transform .35s var(--ease),background .3s}
+.stepper button:hover{transform:scale(1.12);background:var(--card-hover)}
+.stepper .num{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+
+.empty{text-align:center;padding:36px 20px;color:var(--faint)}
+.empty svg{width:38px;height:38px;margin-bottom:12px;opacity:.6}
+.empty p{font-size:13.5px;font-weight:500}
+
+/* FULLSCREEN POMODORO */
+.pomo-full{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column;
+  align-items:center;justify-content:center;padding:30px;text-align:center}
+.pomo-full::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(700px 700px at 50% -10%,var(--halo-1),transparent 60%),
+    radial-gradient(800px 800px at 50% 110%,var(--halo-2),transparent 60%)}
+.pomo-full.open{display:flex;animation:fade .4s var(--ease)}
+.pf-inner{position:relative;z-index:1;width:100%;max-width:520px}
+.pf-exit{position:absolute;top:24px;left:24px;z-index:2;width:46px;height:46px;border-radius:14px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(14px);
+  transition:transform .4s var(--ease),background .3s}
+.pf-exit:hover{transform:translateX(-3px);background:var(--card-hover)}
+.pf-exit svg{width:22px;height:22px}
+.pf-phase{font-size:12px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.pf-task{font-size:clamp(24px,5vw,38px);font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-bottom:34px;
+  max-width:640px;margin-left:auto;margin-right:auto}
+.pf-task .lab{display:block;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+.ring-wrap{position:relative;width:min(330px,78vw);aspect-ratio:1;margin:0 auto 30px}
+.ring-wrap svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring-bg{fill:none;stroke:var(--track);stroke-width:8}
+.ring-fg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.timer-num{position:absolute;inset:0;display:grid;place-content:center;font-size:clamp(50px,13vw,74px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.timer-sub{position:absolute;left:0;right:0;bottom:18%;text-align:center;font-size:12px;color:var(--faint);font-weight:600}
+.session-dots{display:flex;gap:8px;justify-content:center;margin-bottom:26px}
+.sd{width:9px;height:9px;border-radius:50%;background:var(--track);transition:background .3s,transform .3s var(--ease)}
+.sd.done{background:var(--accent);transform:scale(1.15)}
+.pf-controls{display:flex;gap:13px;justify-content:center}
+.round{width:60px;height:60px;border-radius:50%;border:1px solid var(--border-strong);background:var(--card);color:var(--text);
+  cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(12px);
+  transition:transform .42s var(--ease),box-shadow .42s var(--ease),background .3s}
+.round svg{width:25px;height:25px}
+.round.primary{width:76px;height:76px;background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.round.primary svg{width:32px;height:32px}
+.round:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 16px 36px rgba(0,0,0,.45),0 0 24px var(--glow)}
+
+body.force-mobile .app{max-width:430px}
+body.force-mobile .stat-grid{grid-template-columns:repeat(2,1fr)}
+@media(max-width:680px){
+  .app{padding:20px 15px 120px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .stat .v{font-size:25px}
+  .tab span{display:none}.tab{padding:14px}
+  .daystamp .d2{display:none}
+  .chart{height:150px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);z-index:90;
+  background:var(--accent);color:var(--bg);padding:13px 22px;border-radius:14px;font-weight:600;font-size:13.5px;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .35s var(--ease),transform .35s var(--ease)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <header class="top">
+    <div class="daystamp">
+      <div class="d1" id="dateMain">—</div>
+      <div class="d2" id="dateSub">—</div>
+    </div>
+    <button class="gear" id="openSettings" aria-label="Réglages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-view="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Habitudes</span></button>
+    <button class="tab" data-view="todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Tâches</span></button>
+    <button class="tab" data-view="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>Notes</span></button>
+    <button class="tab" data-view="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></button>
+  </div>
+
+  <!-- HABITS -->
+  <section class="view active" id="view-habits">
+    <div class="add-row">
+      <input class="input" id="habitInput" placeholder="Nouvelle habitude — ex. Lire 20 min" maxlength="60">
+      <button class="btn" id="addHabit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter</button>
+    </div>
+    <div class="card hoverable">
+      <div class="section-head"><h2>Aujourd'hui</h2><span class="count" id="habitCount">0 / 0</span></div>
+      <div class="list" id="habitList"></div>
+    </div>
+  </section>
+
+  <!-- TODO -->
+  <section class="view" id="view-todo">
+    <div class="add-row">
+      <input class="input" id="todoInput" placeholder="Nouvelle tâche — ex. Finir le rapport" maxlength="80">
+      <button class="btn" id="addTodo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter</button>
+    </div>
+    <div class="card hoverable">
+      <div class="section-head"><h2>À faire</h2><span class="count" id="todoCount">0 restantes</span></div>
+      <div class="list" id="todoList"></div>
+      <div style="font-size:11.5px;color:var(--faint);margin-top:14px;display:flex;align-items:center;gap:7px">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        Touchez le bouton lecture d'une tâche pour lancer un Pomodoro plein écran dessus.
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTES -->
+  <section class="view" id="view-notes">
+    <div class="note-jump">
+      <button id="jumpNow">Maintenant</button>
+      <button id="toggleRecap">Voir le récap du jour</button>
+    </div>
+    <div class="card hoverable" id="planCard">
+      <div class="section-head"><h2>Journal du jour</h2><span class="count">Une note toutes les 30 min</span></div>
+      <div class="list" id="planList"></div>
+    </div>
+    <div class="card hoverable" id="recapCard" style="display:none">
+      <div class="section-head"><h2>Récap du jour</h2><span class="count" id="recapCount">0 entrée</span></div>
+      <div id="recapList"></div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="view" id="view-stats">
+    <div class="stat-grid">
+      <div class="card hoverable stat"><div class="v" id="sCompleted">0</div><div class="l">Habitudes faites</div></div>
+      <div class="card hoverable stat"><div class="v" id="sRate">0%</div><div class="l">Réussite 7j</div></div>
+      <div class="card hoverable stat"><div class="v" id="sStreak">0</div><div class="l">Série max</div></div>
+      <div class="card hoverable stat"><div class="v" id="sFocus">0</div><div class="l">Sessions focus</div></div>
+    </div>
+    <div class="card hoverable" style="margin-bottom:16px">
+      <div class="section-head"><h2>Taux de complétion</h2></div>
+      <div class="range" id="statRange" style="margin-bottom:16px">
+        <button class="active" data-range="week">Semaine</button>
+        <button data-range="month">Mois</button>
+      </div>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="card hoverable">
+      <div class="section-head"><h2>Régularité</h2><span class="count">30 derniers jours</span></div>
+      <div class="heat" id="heat" style="grid-template-columns:repeat(15,1fr)"></div>
+    </div>
+  </section>
+</div>
+
+<!-- FULLSCREEN POMODORO -->
+<div class="pomo-full" id="pomoFull">
+  <button class="pf-exit" id="pfExit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+  <div class="pf-inner">
+    <div class="pf-phase" id="pfPhase">Travail</div>
+    <div class="pf-task" id="pfTask"><span class="lab">Objectif</span>—</div>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 240 240"><circle class="ring-bg" cx="120" cy="120" r="112"/><circle class="ring-fg" id="ring" cx="120" cy="120" r="112"/></svg>
+      <div class="timer-num" id="timerNum">25:00</div>
+      <div class="timer-sub" id="timerSub">Prêt à démarrer</div>
+    </div>
+    <div class="session-dots" id="sessionDots"></div>
+    <div class="pf-controls">
+      <button class="round" id="resetBtn" title="Réinitialiser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+      <button class="round primary" id="playBtn" title="Démarrer"><svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>
+      <button class="round" id="skipBtn" title="Phase suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <button class="close-x" id="closeSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <h3>Réglages</h3>
+  <p class="desc">Personnalisez l'apparence et le focus.</p>
+
+  <div class="set-block">
+    <div class="bl">Thème</div>
+    <div class="opt-row">
+      <button class="opt" data-theme-opt="dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Sombre</button>
+      <button class="opt" data-theme-opt="light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Clair</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="bl">Affichage</div>
+    <div class="opt-row">
+      <button class="opt" data-layout="auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>Auto</button>
+      <button class="opt" data-layout="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>PC</button>
+      <button class="opt" data-layout="mobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>Mobile</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="bl">Pomodoro (minutes)</div>
+    <div class="pomo-config">
+      <div class="cfg"><div class="clabel">Travail</div><div class="stepper"><button data-step="work" data-d="-5">−</button><span class="num" id="cfgWork">25</span><button data-step="work" data-d="5">+</button></div></div>
+      <div class="cfg"><div class="clabel">Pause courte</div><div class="stepper"><button data-step="short" data-d="-1">−</button><span class="num" id="cfgShort">5</span><button data-step="short" data-d="1">+</button></div></div>
+      <div class="cfg"><div class="clabel">Pause longue</div><div class="stepper"><button data-step="long" data-d="-5">−</button><span class="num" id="cfgLong">15</span><button data-step="long" data-d="5">+</button></div></div>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="bl">Focus</div>
+    <div class="toggle-row"><div><div class="tl">Sons</div><div class="ts">Signal sonore aux changements de phase</div></div><div class="switch on" id="swSound"></div></div>
+    <div class="toggle-row"><div><div class="tl">Notifications</div><div class="ts">Alerte même en arrière-plan</div></div><div class="switch" id="swNotif"></div></div>
+    <div class="toggle-row"><div><div class="tl">Auto-enchaînement</div><div class="ts">Démarre la phase suivante automatiquement</div></div><div class="switch on" id="swAuto"></div></div>
+  </div>
+
+  <div class="set-block">
+    <div class="bl">Données</div>
+    <button class="btn ghost" id="resetData" style="width:100%;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Effacer toutes les données</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const pad=n=>String(n).padStart(2,'0');
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const store={
+  load(k,d){try{const v=JSON.parse(localStorage.getItem('cad_'+k));return v??d}catch{return d}},
+  save(k,v){localStorage.setItem('cad_'+k,JSON.stringify(v))}
+};
+let habits=store.load('habits',[]);
+let todos=store.load('todos',[]);
+let settings=store.load('settings',{theme:'dark',layout:'auto',sound:true,notif:false,auto:true});
+let pcfg=store.load('pcfg',{work:25,short:5,long:15});
+let focusStats=store.load('focusStats',{sessions:0});
+let notes=store.load('notes',{});         // { 'YYYY-MM-DD': { '08:00': 'texte', ... } }
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800)}
+function save(){store.save('habits',habits);store.save('todos',todos);store.save('settings',settings);store.save('pcfg',pcfg);store.save('focusStats',focusStats);store.save('notes',notes)}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* header date */
+function renderDate(){const d=new Date();
+  $('#dateMain').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  $('#dateSub').textContent='Journée en cours';}
+
+/* THEME / LAYOUT */
+function applySettings(){
+  document.body.dataset.theme=settings.theme;
+  document.body.classList.toggle('force-mobile',settings.layout==='mobile');
+  const vp=document.querySelector('meta[name=viewport]');
+  if(settings.layout==='desktop')vp.setAttribute('content','width=1180');
+  else vp.setAttribute('content','width=device-width, initial-scale=1.0');
+  $$('[data-theme-opt]').forEach(b=>b.classList.toggle('active',b.dataset.themeOpt===settings.theme));
+  $$('[data-layout]').forEach(b=>b.classList.toggle('active',b.dataset.layout===settings.layout));
+  $('#swSound').classList.toggle('on',settings.sound);
+  $('#swNotif').classList.toggle('on',settings.notif);
+  $('#swAuto').classList.toggle('on',settings.auto);
+}
+
+/* TABS */
+$$('.tab').forEach(t=>t.onclick=()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  $$('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+t.dataset.view).classList.add('active');
+  if(t.dataset.view==='stats')renderStats();
+  if(t.dataset.view==='notes')renderNotes();
+});
+
+const ICONS={
+  yes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  no:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  flame:'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 4-2 5-2 8a2 2 0 0 0 4 0c0-1 1 1 1 3a3 3 0 0 1-6 0c0-2 1-3 1-4 0 1-2 2-2 4a5 5 0 0 0 10 0c0-5-6-7-6-11z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>'
+};
+
+/* ---------- HABITS (persistent, two-state) ---------- */
+// h.log[date] = 'yes' | 'no' (undefined = not marked). Habits persist day to day automatically.
+function calcStreak(h){let s=0;const d=new Date();for(let i=0;i<400;i++){const k=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(h.log&&h.log[k]==='yes'){s++;d.setDate(d.getDate()-1)}else break}return s}
+
+function renderHabits(){
+  const list=$('#habitList');list.innerHTML='';
+  const tk=todayKey();let done=0;
+  if(!habits.length){list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg><p>Aucune habitude. Ajoutez-en une — elle reviendra chaque jour.</p></div>'}
+  habits.forEach(h=>{
+    const st=h.log&&h.log[tk];if(st==='yes')done++;
+    const streak=calcStreak(h);
+    const el=document.createElement('div');
+    el.className='h-item'+(st==='yes'?' done-yes':st==='no'?' done-no':'');
+    el.innerHTML=`
+      <div class="h-main"><div class="h-name">${esc(h.name)}</div>
+      <div class="h-meta"><span class="streak">${ICONS.flame} ${streak} j de suite</span></div></div>
+      <div class="hbox">
+        <button class="tickbtn yes${st==='yes'?' on':''}" data-set="yes" data-id="${h.id}" title="Fait">${ICONS.yes}</button>
+        <button class="tickbtn no${st==='no'?' on':''}" data-set="no" data-id="${h.id}" title="Pas fait">${ICONS.no}</button>
+      </div>
+      <button class="del" data-del="${h.id}">${ICONS.trash}</button>`;
+    list.appendChild(el);
+  });
+  $('#habitCount').textContent=`${done} / ${habits.length} faites`;
+  list.querySelectorAll('.tickbtn').forEach(b=>b.onclick=()=>setHabit(b.dataset.id,b.dataset.set));
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{habits=habits.filter(x=>x.id!=b.dataset.del);save();renderHabits()});
+}
+function setHabit(id,val){const h=habits.find(x=>x.id==id);if(!h)return;h.log=h.log||{};const tk=todayKey();
+  if(h.log[tk]===val)delete h.log[tk]; else h.log[tk]=val; save();renderHabits()}
+function addHabit(){const v=$('#habitInput').value.trim();if(!v)return;habits.push({id:Date.now(),name:v,log:{},created:todayKey()});$('#habitInput').value='';save();renderHabits();toast('Habitude ajoutée')}
+$('#addHabit').onclick=addHabit;$('#habitInput').addEventListener('keydown',e=>{if(e.key==='Enter')addHabit()});
+
+/* ---------- TODO ---------- */
+function renderTodos(){
+  const list=$('#todoList');list.innerHTML='';
+  const open=todos.filter(t=>!t.done).length;
+  if(!todos.length)list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>Aucune tâche. Votre liste est vide.</p></div>';
+  todos.slice().sort((a,b)=>a.done-b.done).forEach(t=>{
+    const el=document.createElement('div');el.className='h-item'+(t.done?' completed':'');
+    el.innerHTML=`<div class="check${t.done?' done':''}" data-id="${t.id}">${ICONS.check}</div>
+      <div class="h-main"><div class="h-name">${esc(t.name)}</div></div>
+      ${!t.done?`<button class="play-btn" data-focus="${t.id}" title="Lancer le Pomodoro">${ICONS.play}</button>`:''}
+      <button class="del" data-del="${t.id}">${ICONS.trash}</button>`;
+    list.appendChild(el);
+  });
+  $('#todoCount').textContent=`${open} restante${open>1?'s':''}`;
+  list.querySelectorAll('.check').forEach(c=>c.onclick=()=>{const t=todos.find(x=>x.id==c.dataset.id);t.done=!t.done;save();renderTodos()});
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{todos=todos.filter(x=>x.id!=b.dataset.del);save();renderTodos()});
+  list.querySelectorAll('[data-focus]').forEach(b=>b.onclick=()=>openFocus(b.dataset.focus));
+}
+function addTodo(){const v=$('#todoInput').value.trim();if(!v)return;todos.push({id:Date.now(),name:v,done:false});$('#todoInput').value='';save();renderTodos();toast('Tâche ajoutée')}
+$('#addTodo').onclick=addTodo;$('#todoInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo()});
+
+/* ---------- NOTES / PLANNING (48 slots, reset à minuit via clé du jour) ---------- */
+function slots(){const out=[];for(let h=0;h<24;h++)for(let m of[0,30])out.push(pad(h)+':'+pad(m));return out}
+function currentSlot(){const d=new Date();const m=d.getMinutes()<30?'00':'30';return pad(d.getHours())+':'+m}
+let recapOpen=false;
+function renderNotes(){
+  const tk=todayKey();notes[tk]=notes[tk]||{};
+  const list=$('#planList');list.innerHTML='';
+  const cur=currentSlot();
+  slots().forEach(s=>{
+    const filled=!!(notes[tk][s]&&notes[tk][s].trim());
+    const row=document.createElement('div');
+    row.className='note-row'+(filled?' filled':'')+(s===cur?' now':'');
+    row.innerHTML=`<div class="note-time"><span class="note-dot"></span>${s}</div>
+      <textarea class="note-input" rows="1" data-slot="${s}" placeholder="${s===cur?'Que faites-vous maintenant ?':'…'}">${notes[tk][s]?esc(notes[tk][s]):''}</textarea>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.note-input').forEach(ta=>{
+    autoGrow(ta);
+    ta.addEventListener('input',()=>{autoGrow(ta);notes[tk][ta.dataset.slot]=ta.value;store.save('notes',notes);
+      ta.closest('.note-row').classList.toggle('filled',!!ta.value.trim())});
+  });
+  if(recapOpen)renderRecap();
+}
+function autoGrow(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'}
+function renderRecap(){
+  const tk=todayKey();const data=notes[tk]||{};
+  const entries=slots().filter(s=>data[s]&&data[s].trim());
+  $('#recapCount').textContent=entries.length+' entrée'+(entries.length>1?'s':'');
+  const r=$('#recapList');r.innerHTML='';
+  if(!entries.length){r.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Aucune note pour le moment.</p></div>';return}
+  entries.forEach(s=>{const it=document.createElement('div');it.className='recap-item';
+    it.innerHTML=`<div class="recap-t">${s}</div><div class="recap-x">${esc(data[s])}</div>`;r.appendChild(it)});
+}
+$('#jumpNow').onclick=()=>{recapOpen=false;$('#recapCard').style.display='none';$('#planCard').style.display='';$('#toggleRecap').textContent='Voir le récap du jour';
+  renderNotes();const cur=currentSlot();const el=[...$$('.note-row')].find(r=>r.querySelector('.note-time').textContent.includes(cur));
+  if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.querySelector('.note-input').focus(),350)}};
+$('#toggleRecap').onclick=()=>{recapOpen=!recapOpen;
+  $('#recapCard').style.display=recapOpen?'':'none';
+  $('#planCard').style.display=recapOpen?'none':'';
+  $('#toggleRecap').textContent=recapOpen?'Revenir au journal':'Voir le récap du jour';
+  if(recapOpen)renderRecap();};
+
+/* midnight reset: clé par date => le planning du jour repart vide. On nettoie les vieux jours pour rester léger. */
+function pruneNotes(){const keep=14;const keys=Object.keys(notes).sort();while(keys.length>keep){delete notes[keys.shift()]}store.save('notes',notes)}
+
+/* ---------- POMODORO (timestamp, plein écran par tâche) ---------- */
+const PHASES={work:'Travail',short:'Pause courte',long:'Pause longue'};
+let pomo=store.load('pomo',{phase:'work',running:false,endAt:null,remaining:pcfg.work*60,cycle:0,taskId:null,taskName:null});
+let tick=null;
+function phaseSeconds(p){return (p==='work'?pcfg.work:p==='short'?pcfg.short:pcfg.long)*60}
+function openFocus(id){const t=todos.find(x=>x.id==id);if(!t)return;pomo.taskId=t.id;pomo.taskName=t.name;
+  resetTimer();$('#pomoFull').classList.add('open');startTimer();updatePomoUI();toast('Focus lancé')}
+function closeFocus(){$('#pomoFull').classList.remove('open')}
+$('#pfExit').onclick=closeFocus;
+
+function startTimer(){if(pomo.running)return;pomo.running=true;pomo.endAt=Date.now()+pomo.remaining*1000;store.save('pomo',pomo);loopTimer()}
+function pauseTimer(){if(!pomo.running)return;pomo.remaining=Math.max(0,Math.round((pomo.endAt-Date.now())/1000));pomo.running=false;pomo.endAt=null;store.save('pomo',pomo);clearInterval(tick);updatePomoUI()}
+function resetTimer(){pomo.running=false;pomo.endAt=null;pomo.remaining=phaseSeconds(pomo.phase);clearInterval(tick);store.save('pomo',pomo);updatePomoUI()}
+function skipPhase(){nextPhase(true)}
+function nextPhase(manual){clearInterval(tick);
+  if(pomo.phase==='work'){
+    if(!manual){focusStats.sessions++;store.save('focusStats',focusStats)}
+    pomo.cycle++;pomo.phase=(pomo.cycle%4===0)?'long':'short';
+  }else{pomo.phase='work'}
+  pomo.remaining=phaseSeconds(pomo.phase);pomo.running=false;pomo.endAt=null;store.save('pomo',pomo);
+  if(!manual){beep(pomo.phase==='work'?'work':'break');notify(pomo.phase==='work'?'Au travail !':'Pause méritée');if(settings.auto)startTimer()}
+  updatePomoUI();
+}
+function loopTimer(){clearInterval(tick);tick=setInterval(()=>{
+  const rem=Math.round((pomo.endAt-Date.now())/1000);
+  if(rem<=0){pomo.remaining=0;updatePomoUI();nextPhase(false);return}
+  pomo.remaining=rem;updatePomoUI();
+},250);updatePomoUI()}
+function updatePomoUI(){
+  const r=pomo.running?Math.max(0,Math.round((pomo.endAt-Date.now())/1000)):pomo.remaining;
+  const m=pad(Math.floor(r/60)),s=pad(r%60);
+  $('#timerNum').textContent=`${m}:${s}`;
+  $('#pfPhase').textContent=PHASES[pomo.phase];
+  $('#pfTask').innerHTML=`<span class="lab">Objectif</span>${pomo.taskName?esc(pomo.taskName):'—'}`;
+  $('#timerSub').textContent=pomo.running?'En cours…':(r<phaseSeconds(pomo.phase)?'En pause':'Prêt à démarrer');
+  const total=phaseSeconds(pomo.phase);const frac=total?r/total:0;
+  const C=2*Math.PI*112;$('#ring').style.strokeDasharray=C;$('#ring').style.strokeDashoffset=C*(1-frac);
+  $('#playIcon').innerHTML=pomo.running?'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>':'<polygon points="6 4 20 12 6 20 6 4"/>';
+  const dots=$('#sessionDots');dots.innerHTML='';const filled=pomo.cycle%4===0&&pomo.cycle>0?4:pomo.cycle%4;
+  for(let i=0;i<4;i++)dots.innerHTML+=`<div class="sd${i<filled?' done':''}"></div>`;
+  document.title=pomo.running?`${m}:${s} · ${PHASES[pomo.phase]}`:'Suivi du jour';
+}
+$('#playBtn').onclick=()=>{pomo.running?pauseTimer():startTimer()};
+$('#resetBtn').onclick=resetTimer;$('#skipBtn').onclick=skipPhase;
+$$('.stepper button').forEach(b=>b.onclick=()=>{const k=b.dataset.step,d=+b.dataset.d;
+  pcfg[k]=Math.max(k==='work'?5:1,Math.min(k==='work'?90:30,pcfg[k]+d));
+  $('#cfgWork').textContent=pcfg.work;$('#cfgShort').textContent=pcfg.short;$('#cfgLong').textContent=pcfg.long;
+  store.save('pcfg',pcfg);if(!pomo.running)resetTimer()});
+
+let actx;
+function beep(type){if(!settings.sound)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+  const seq=type==='work'?[660,880]:[523,392];seq.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();
+  o.connect(g);g.connect(actx.destination);o.frequency.value=f;o.type='sine';
+  const t=actx.currentTime+i*0.18;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.4,t+0.03);g.gain.exponentialRampToValueAtTime(.001,t+0.32);
+  o.start(t);o.stop(t+0.34)})}catch(e){}}
+function notify(msg){if(!settings.notif)return;if('Notification'in window&&Notification.permission==='granted')new Notification('Suivi du jour',{body:msg})}
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pomo.running){
+  let rem=Math.round((pomo.endAt-Date.now())/1000);
+  while(rem<=0){nextPhase(false);if(!pomo.running)break;rem=Math.round((pomo.endAt-Date.now())/1000)}
+  loopTimer();}});
+
+/* ---------- STATS ---------- */
+let statRange='week';
+function dayCompletion(ds){if(!habits.length)return null;let yes=0,tot=0;habits.forEach(h=>{if(h.created<=ds){tot++;if(h.log&&h.log[ds]==='yes')yes++}});return tot?Math.round(yes/tot*100):null}
+function renderStats(){
+  let totalYes=0;habits.forEach(h=>{for(const k in(h.log||{}))if(h.log[k]==='yes')totalYes++});
+  $('#sCompleted').textContent=totalYes;
+  let maxStreak=0;habits.forEach(h=>maxStreak=Math.max(maxStreak,calcStreak(h)));
+  $('#sStreak').textContent=maxStreak;
+  $('#sFocus').textContent=focusStats.sessions;
+  let r=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());const c=dayCompletion(ds);if(c!==null)r.push(c)}
+  $('#sRate').textContent=(r.length?Math.round(r.reduce((a,b)=>a+b,0)/r.length):0)+'%';
+
+  const chart=$('#chart');chart.innerHTML='';
+  const n=statRange==='week'?7:30;const labels=[],vals=[];
+  for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    vals.push(dayCompletion(ds)||0);labels.push(statRange==='week'?['D','L','M','M','J','V','S'][d.getDay()]:d.getDate())}
+  const step=statRange==='week'?1:5;
+  vals.forEach((v,i)=>{const w=document.createElement('div');w.className='bar-wrap';
+    const showLbl=statRange==='week'||i%step===0||i===vals.length-1;
+    w.innerHTML=`<div class="bar-val">${v||''}</div><div class="bar" style="height:${Math.max(4,v)}%"></div><div class="bar-lbl">${showLbl?labels[i]:''}</div>`;
+    chart.appendChild(w)});
+
+  const heat=$('#heat');heat.innerHTML='';
+  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());const c=dayCompletion(ds);
+    const cell=document.createElement('div');cell.className='heat-cell';
+    const op=c===null?0:c/100;cell.style.background=op?`rgba(var(--rgb),${0.12+op*0.78})`:'var(--track)';
+    cell.title=d.toLocaleDateString('fr-FR')+(c!==null?` — ${c}%`:'');heat.appendChild(cell)}
+}
+$$('#statRange button').forEach(b=>b.onclick=()=>{$$('#statRange button').forEach(x=>x.classList.remove('active'));b.classList.add('active');statRange=b.dataset.range;renderStats()});
+
+/* SETTINGS */
+$('#openSettings').onclick=()=>{$('#overlay').classList.add('open');$('#sheet').classList.add('open')};
+function closeSet(){$('#overlay').classList.remove('open');$('#sheet').classList.remove('open')}
+$('#closeSettings').onclick=closeSet;$('#overlay').onclick=closeSet;
+$$('[data-theme-opt]').forEach(b=>b.onclick=()=>{settings.theme=b.dataset.themeOpt;save();applySettings();renderStats()});
+$$('[data-layout]').forEach(b=>b.onclick=()=>{settings.layout=b.dataset.layout;save();applySettings()});
+$('#swSound').onclick=()=>{settings.sound=!settings.sound;save();applySettings();if(settings.sound)beep('work')};
+$('#swNotif').onclick=()=>{settings.notif=!settings.notif;if(settings.notif&&'Notification'in window)Notification.requestPermission();save();applySettings()};
+$('#swAuto').onclick=()=>{settings.auto=!settings.auto;save();applySettings()};
+$('#resetData').onclick=()=>{if(confirm('Effacer toutes les données (habitudes, tâches, notes) ?')){localStorage.clear();location.reload()}};
+
+/* midnight watcher: si le jour change pendant que l'app est ouverte, on rafraîchit le journal */
+let lastDay=todayKey();
+setInterval(()=>{const now=todayKey();if(now!==lastDay){lastDay=now;pruneNotes();renderDate();renderHabits();
+  if($('#view-notes').classList.contains('active'))renderNotes();toast('Nouveau jour — journal réinitialisé')}},30000);
+
+/* INIT */
+$('#cfgWork').textContent=pcfg.work;$('#cfgShort').textContent=pcfg.short;$('#cfgLong').textContent=pcfg.long;
+renderDate();applySettings();pruneNotes();renderHabits();renderTodos();
+if(pomo.running&&pomo.endAt){let rem=Math.round((pomo.endAt-Date.now())/1000);while(rem<=0){nextPhase(false);if(!pomo.running)break;rem=Math.round((pomo.endAt-Date.now())/1000)}updatePomoUI();if(pomo.running)loopTimer()}else updatePomoUI();
+</script>
+</body>
+</html>
